@@ -9,6 +9,8 @@ from datetime import datetime
 from urllib.parse import urljoin
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from flask import Flask
+import threading
 
 print("程式啟動")
 # =================設定=================
@@ -376,24 +378,25 @@ seen=load_seen()
 first_run = len(seen)==0
 
 
-print(
-    "開始監控戰鬥陀螺"
-)
+def monitor():
 
+    seen = load_seen()
 
+    first_run = len(seen) == 0
 
-while True:
+    print("開始監控戰鬥陀螺")
 
+    while True:
 
-    products=get_products()
+        products = get_products()
 
+        print(
+            time.strftime("%H:%M:%S"),
+            "商品數:",
+            len(products)
+        )
 
-
-    print(
-        datetime.now().strftime("%H:%M:%S"),
-        "商品數:",
-        len(products)
-    )
+        time.sleep(60)
 
 
 
@@ -494,3 +497,19 @@ while True:
     time.sleep(
         CHECK_TIME
     )
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Beyblade Monitor Running"
+
+threading.Thread(
+    target=monitor,
+    daemon=True
+).start()
+
+app.run(
+    host="0.0.0.0",
+    port=int(os.environ.get("PORT", 10000))
+)
