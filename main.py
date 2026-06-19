@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
+print("程式啟動")
 # =================設定=================
 
 TOKEN=os.getenv("8183572724:AAEBnmAdXgGQBnoTXAW9GYz6GfxBlxqiJGU")
