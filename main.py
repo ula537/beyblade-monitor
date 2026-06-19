@@ -187,35 +187,47 @@ def get_products():
         print("\n掃描:",site["name"])
 
 
-    if site["name"]=="Funbox":
-
         try:
+            if site["name"]=="Funbox":
 
-            print("Funbox連線中...")
+                print("Funbox連線中...")
 
-            r = requests.get(
-                site["url"],
-                headers={
-                    "User-Agent":"Mozilla/5.0"
-                },
-                timeout=20
-            )
+                r = requests.get(
+                    site["url"],
+                    headers={
+                        "User-Agent":"Mozilla/5.0"
+                    },
+                    timeout=20
+                )
 
-            print("Funbox完成")
+                print("Funbox完成")
 
-            html = r.text
+                html = r.text
+
+            else:
+
+                html = selenium_html(
+                site["url"]
+                )
 
         except Exception as e:
 
-            print("Funbox錯誤", e)
-            continue
-
-
-            else:
+            print(site["name"], "錯誤", e)
+                
 
                 html=selenium_html(
                     site["url"]
                 )
+
+            print(
+                site["name"],
+                "HTML:",
+                len(html)
+
+        except Exception as e:
+
+            print("Funbox錯誤", e)
+            continue        
 
 
             print(
