@@ -187,24 +187,28 @@ def get_products():
         print("\n掃描:",site["name"])
 
 
+    if site["name"]=="Funbox":
+
         try:
 
+            print("Funbox連線中...")
 
-            if site["name"]=="Funbox":
+            r = requests.get(
+                site["url"],
+                headers={
+                    "User-Agent":"Mozilla/5.0"
+                },
+                timeout=20
+            )
 
-                print("Funbox連線中...")
+            print("Funbox完成")
 
-                r=requests.get(
-                    site["url"],
-                    headers={
-                        "User-Agent":"Mozilla/5.0"
-                    },
-                    timeout=20
-                )
+            html = r.text
 
-print("Funbox完成")
+        except Exception as e:
 
-                html=r.text
+            print("Funbox錯誤", e)
+            continue
 
 
             else:
