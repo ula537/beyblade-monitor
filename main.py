@@ -1,82 +1,49 @@
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 import time
 import json
 import os
-from datetime import datetime
 from urllib.parse import urljoin
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from flask import Flask
 import threading
-import traceback
 
 print("程式啟動")
-# =================設定=================
 
-TOKEN=os.getenv("8183572724:AAEBnmAdXgGQBnoTXAW9GYz6GfxBlxqiJGU")
-CHAT_ID=os.getenv("8806826310")
+# ================= 設定 =================
+
+TOKEN = os.getenv("8183572724:AAEBnmAdXgGQBnoTXAW9GYz6GfxBlxqiJGU")
+CHAT_ID = os.getenv("8806826310")
 
 CHECK_TIME = 60
-
 SAVE_FILE = "seen.json"
 
-
 SOURCES = [
-
-{
-"name":"Funbox",
-"url":"https://shop.funbox.com.tw/collections/%E6%88%B0%E9%AC%A5%E9%99%80%E8%9E%BA"
-},
-
-{
-"name":"MOMO",
-"url":"https://www.momoshop.com.tw/search/%E6%88%B0%E9%AC%A5%E9%99%80%E8%9E%BA?originalCateCode=2186500000&isBrandCategory=Y&_isFuzzy=2&searchType=1"
-},
-
-{
-"name":"蝦皮商城",
-"url":"https://shopee.tw/funbox5120"
-},
-
-{
-"name":"誠品",
-"url":"https://www.eslite.com/Search?keyword=%E6%88%B0%E9%AC%A5%E9%99%80%E8%9E%BA"
-},
-
-{
-"name":"墊腳石",
-"url":"https://www.tcsb.com.tw/v2/Search?q=%E6%88%B0%E9%AC%A5%E9%99%80%E8%9E%BA"
-}
-
+    {
+        "name": "Funbox",
+        "url": "https://shop.funbox.com.tw/collections/%E6%88%B0%E9%AC%A5%E9%99%80%E8%9E%BA"
+    }
 ]
 
-
-# =================Telegram=================
+# ================= Telegram =================
 
 def send_telegram(msg):
-
-    url=f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
     try:
 
         requests.post(
-            url,
+            f"https://api.telegram.org/bot{TOKEN}/sendMessage",
             data={
-                "chat_id":CHAT_ID,
-                "text":msg
+                "chat_id": CHAT_ID,
+                "text": msg
             },
             timeout=10
         )
 
     except Exception as e:
-        print("Telegram錯誤",e)
 
+        print("Telegram錯誤:", e)
 
-
-# =================讀取=================
+# ================= seen.json =================
 
 def load_seen():
 
@@ -91,8 +58,6 @@ def load_seen():
             return json.load(f)
 
     return {}
-
-
 
 def save_seen(data):
 
@@ -109,126 +74,47 @@ def save_seen(data):
             indent=2
         )
 
-
-
-# =================Chrome=================
-
-def selenium_html(url):
-
-    opt=Options()
-
-    opt.add_argument("--headless")
-    opt.add_argument("--no-sandbox")
-    opt.add_argument("--disable-dev-shm-usage")
-    opt.add_argument("--disable-gpu")
-    opt.add_argument("--window-size=1920,1080")
-
-
-    driver=webdriver.Chrome(
-        service=Service(
-            ChromeDriverManager().install()
-        ),
-        options=opt
-    )
-
-
-    driver.get(url)
-
-    time.sleep(5)
-
-    html=driver.page_source
-
-    driver.quit()
-
-    return html
-
-
-
-# =================庫存=================
+# ================= 庫存判斷 =================
 
 def check_stock(text):
 
-    text=text.lower()
-
-
-    no_stock=[
-
+    no_stock = [
         "售罄",
         "缺貨",
         "暫時缺貨",
         "補貨中",
         "無庫存",
         "貨到通知"
-
     ]
 
+    for word in no_stock:
 
-    for x in no_stock:
-
-        if x in text:
-
+        if word in text:
             return False
-
 
     return True
 
-
-
-# =================抓商品=================
+# ================= 抓商品 =================
 
 def get_products():
 
-    products={}
-
+    products = {}
 
     for site in SOURCES:
 
-
-        print("\n掃描:",site["name"])
-
+        print("\n掃描:", site["name"])
 
         try:
-            if site["name"]=="Funbox":
 
-                print("Funbox連線中...")
+            r = requests.get(
+                site["url"],
+                headers={
+                    "User-Agent": "Mozilla/5.0"
+                },
+                timeout=20
+            )
 
-                r = requests.get(
-                    site["url"],
-                    headers={
-                        "User-Agent":"Mozilla/5.0"
-                    },
-                    timeout=20
-                )
-
-                print("Funbox完成")
-
-                html = r.text
-
-            else:
-
-                html = selenium_html(
-                site["url"]
-                )
-
-        except Exception as e:
-
-            print(site["name"], "錯誤", e)
-                
-
-                html=selenium_html(
-                    site["url"]
-                )
-
-            print(
-                site["name"],
-                "HTML:",
-                len(html)
-
-        except Exception as e:
-
-            print("Funbox錯誤", e)
-            continue        
-
+            html = r.text
 
             print(
                 site["name"],
@@ -236,137 +122,62 @@ def get_products():
                 len(html)
             )
 
-
-            soup=BeautifulSoup(
+            soup = BeautifulSoup(
                 html,
                 "html.parser"
             )
 
-
-            count=0
-
+            count = 0
 
             for a in soup.find_all("a"):
 
-
-                text=a.get_text(
+                text = a.get_text(
                     " ",
                     strip=True
                 )
 
-
-                href=a.get("href")
-
+                href = a.get("href")
 
                 if not href:
                     continue
 
+                if "/products/" not in href:
+                    continue
 
-
-                # MOMO只抓商品頁
-
-                if site["name"]=="MOMO":
-
-                    if "/goods/" not in href:
-
-                        continue
-
-
-
-                # 其他商品網址
-
-                if site["name"]=="墊腳石":
-
-                    if "Search" in href:
-                       continue
-
-
-                elif site["name"]=="誠品":
-
-                    if "/product/" not in href:
-                       continue
-
-
-                elif site["name"]=="蝦皮商城":
-
-                    if "-i." not in href:
-                       continue
-
-
-                else:
-
-                    if not any(
-                       x in href
-                       for x in [
-                       "/products/",
-                       "/goods/",
-                       "/item/",
-                       "Product"
-                        ]
-                    ):
-                        continue
-
-                keytext=text.upper()
-
-
-                # 關鍵字限制
-
-                if not (
-                    "BEYBLADE" in keytext
-                    or "戰鬥陀螺" in text
+                if (
+                    "BEYBLADE" not in text.upper()
+                    and "戰鬥陀螺" not in text
                 ):
-
                     continue
 
-
-
-                # 去除垃圾
-
-                if len(text)<8:
-
-                    continue
-
-
-
-                # 補完整網址
                 if href.startswith("/"):
+
                     href = urljoin(
                         site["url"],
                         href
                     )
 
-
-                key=(
+                key = (
                     site["name"]
-                    +"|"
-                    +href
+                    + "|"
+                    + href
                 )
 
+                products[key] = {
 
-                stock=check_stock(
-                    text
-                )
-
-
-                products[key]={
-
-                    "site":site["name"],
-                    "name":text,
-                    "url":href,
-                    "stock":stock
+                    "site": site["name"],
+                    "name": text,
+                    "url": href,
+                    "stock": check_stock(text)
 
                 }
 
-
-                count+=1
-
+                count += 1
 
                 print(
                     "抓到:",
-                    site["name"],
                     text[:80]
                 )
-
 
             print(
                 site["name"],
@@ -374,25 +185,17 @@ def get_products():
                 count
             )
 
-
         except Exception as e:
-            print(site["name"],"錯誤")
-            traceback.print_exc()
 
-
+            print(
+                site["name"],
+                "錯誤:",
+                e
+            )
 
     return products
 
-
-
-
-# =================開始=================
-
-seen=load_seen()
-
-
-first_run = len(seen)==0
-
+# ================= 監控 =================
 
 def monitor():
 
@@ -412,29 +215,18 @@ def monitor():
             len(products)
         )
 
-        time.sleep(60)
+        for key, p in products.items():
 
+            site = p["site"]
+            name = p["name"]
+            url = p["url"]
+            stock = p["stock"]
 
+            if key not in seen:
 
-    for key,p in products.items():
+                if not first_run:
 
-
-        site=p["site"]
-        name=p["name"]
-        url=p["url"]
-        stock=p["stock"]
-
-
-
-        # 新商品
-
-        if key not in seen:
-
-
-            if not first_run:
-
-
-                msg=f"""
+                    msg = f"""
 🆕 新商品
 
 來源:
@@ -443,43 +235,27 @@ def monitor():
 商品:
 {name}
 
-🔗 點擊購買:
+🔗
 {url}
 """
 
+                    send_telegram(msg)
 
-                send_telegram(msg)
+                seen[key] = p
 
-                print(msg)
+            else:
 
+                old_stock = seen[key].get(
+                    "stock",
+                    False
+                )
 
+                if (
+                    old_stock is False
+                    and stock is True
+                ):
 
-            seen[key]={
-
-                "site":site,
-                "name":name,
-                "url":url,
-                "stock":stock
-
-            }
-
-
-
-        else:
-
-
-            old=seen[key].get(
-                "stock",
-                False
-            )
-
-
-            # 缺貨->有貨
-
-            if old==False and stock==True:
-
-
-                msg=f"""
+                    msg = f"""
 🔥 補貨通知
 
 來源:
@@ -488,36 +264,27 @@ def monitor():
 商品:
 {name}
 
-🔗 點擊購買:
+🔗
 {url}
 """
 
+                    send_telegram(msg)
 
-                send_telegram(msg)
+                seen[key]["stock"] = stock
 
-                print(msg)
+        save_seen(seen)
 
+        first_run = False
 
+        time.sleep(CHECK_TIME)
 
-            seen[key]["stock"]=stock
-
-
-
-    save_seen(seen)
-
-
-
-    first_run=False
-
-
-    time.sleep(
-        CHECK_TIME
-    )
+# ================= Flask =================
 
 app = Flask(__name__)
 
 @app.route("/")
 def home():
+
     return "Beyblade Monitor Running"
 
 threading.Thread(
@@ -527,5 +294,10 @@ threading.Thread(
 
 app.run(
     host="0.0.0.0",
-    port=int(os.environ.get("PORT", 10000))
+    port=int(
+        os.environ.get(
+            "PORT",
+            10000
+        )
+    )
 )
