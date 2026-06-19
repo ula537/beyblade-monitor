@@ -11,6 +11,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from flask import Flask
 import threading
+import traceback
 
 print("程式啟動")
 # =================設定=================
@@ -191,14 +192,17 @@ def get_products():
 
             if site["name"]=="Funbox":
 
+                print("Funbox連線中...")
+
                 r=requests.get(
                     site["url"],
                     headers={
-                    "User-Agent":
-                    "Mozilla/5.0"
+                        "User-Agent":"Mozilla/5.0"
                     },
-                    timeout=10
+                    timeout=20
                 )
+
+print("Funbox完成")
 
                 html=r.text
 
@@ -356,12 +360,8 @@ def get_products():
 
 
         except Exception as e:
-
-            print(
-                site["name"],
-                "錯誤",
-                e
-            )
+            print(site["name"],"錯誤")
+            traceback.print_exc()
 
 
 
