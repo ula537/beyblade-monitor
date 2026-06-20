@@ -11,7 +11,7 @@ print("程式啟動")
 
 # ================= 設定 =================
 
-TOKEN = os.getenv("8183572724:AAEBnmAdXgGQBnoTXAW9GYz6GfxBlxqiJGU")
+TOKEN = os.getenv("8183572724:AAGThEkMATxo_g4zsShkF0oImzRv3UK_WOc")
 CHAT_ID = os.getenv("8806826310")
 
 CHECK_TIME = 60
@@ -102,10 +102,13 @@ def get_products():
 
     for site in SOURCES:
 
+        print("="*50)
         print("\n掃描:", site["name"])
 
         try:
 
+            print("開始抓網址")
+            print(site["url"])
             r = requests.get(
                 site["url"],
                 headers={
