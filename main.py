@@ -106,7 +106,7 @@ def get_products():
             r = requests.get(
                 site["url"],
                 headers={
-                    "User-Agent": "Mozilla/5.0"
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
                 },
                 timeout=20
             )
@@ -115,11 +115,7 @@ def get_products():
 
             html = r.text
 
-            print(
-                site["name"],
-                "HTML:",
-                len(html)
-            )
+            print("HTML長度:", len(html))
 
             soup = BeautifulSoup(
                 html,
@@ -180,11 +176,7 @@ def get_products():
 
         except Exception as e:
 
-            print(
-                site["name"],
-                "錯誤:",
-                e
-            )
+            print("Funbox錯誤:", repr(e))
 
     return products
 
