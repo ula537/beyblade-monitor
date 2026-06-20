@@ -114,7 +114,7 @@ def get_products():
             print("A")
 
             r = requests.get(
-                "https://www.google.com",
+                site["url"],
                 timeout=(5,10)
             )
 
@@ -124,7 +124,11 @@ def get_products():
 
             html = r.text
 
-            print("HTML長度:", len(html))
+            except Exception as e:
+
+                print("C")
+                print(type(e).__name__)
+                print(repr(e))
 
             soup = BeautifulSoup(
                 html,
