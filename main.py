@@ -11,8 +11,8 @@ print("程式啟動")
 
 # ================= 設定 =================
 
-TOKEN = os.getenv("8183572724:AAGThEkMATxo_g4zsShkF0oImzRv3UK_WOc")
-CHAT_ID = os.getenv("8806826310")
+TOKEN = "8183572724:AAGThEkMATxo_g4zsShkF0oImzRv3UK_WOc"
+CHAT_ID = "8806826310"
 
 CHECK_TIME = 60
 SAVE_FILE = "seen.json"
@@ -27,9 +27,7 @@ SOURCES = [
 # ================= Telegram =================
 
 def send_telegram(msg):
-
     try:
-
         requests.post(
             f"https://api.telegram.org/bot{TOKEN}/sendMessage",
             data={
@@ -38,9 +36,7 @@ def send_telegram(msg):
             },
             timeout=10
         )
-
     except Exception as e:
-
         print("Telegram錯誤:", e)
 
 # ================= seen.json =================
@@ -48,13 +44,11 @@ def send_telegram(msg):
 def load_seen():
 
     if os.path.exists(SAVE_FILE):
-
         with open(
             SAVE_FILE,
             "r",
             encoding="utf-8"
         ) as f:
-
             return json.load(f)
 
     return {}
@@ -74,7 +68,7 @@ def save_seen(data):
             indent=2
         )
 
-# ================= 庫存判斷 =================
+# ================= 庫存 =================
 
 def check_stock(text):
 
@@ -88,7 +82,6 @@ def check_stock(text):
     ]
 
     for word in no_stock:
-
         if word in text:
             return False
 
@@ -102,13 +95,14 @@ def get_products():
 
     for site in SOURCES:
 
-        print("="*50)
-        print("\n掃描:", site["name"])
+        print("=" * 50)
+        print("掃描:", site["name"])
 
         try:
 
             print("開始抓網址")
             print(site["url"])
+
             r = requests.get(
                 site["url"],
                 headers={
@@ -116,6 +110,8 @@ def get_products():
                 },
                 timeout=20
             )
+
+            print("HTTP:", r.status_code)
 
             html = r.text
 
@@ -160,19 +156,13 @@ def get_products():
                         href
                     )
 
-                key = (
-                    site["name"]
-                    + "|"
-                    + href
-                )
+                key = site["name"] + "|" + href
 
                 products[key] = {
-
                     "site": site["name"],
                     "name": text,
                     "url": href,
                     "stock": check_stock(text)
-
                 }
 
                 count += 1
@@ -229,8 +219,7 @@ def monitor():
 
                 if not first_run:
 
-                    msg = f"""
-🆕 新商品
+                    msg = f"""🆕 新商品
 
 來源:
 {site}
@@ -253,13 +242,9 @@ def monitor():
                     False
                 )
 
-                if (
-                    old_stock is False
-                    and stock is True
-                ):
+                if old_stock is False and stock is True:
 
-                    msg = f"""
-🔥 補貨通知
+                    msg = f"""🔥 補貨通知
 
 來源:
 {site}
@@ -287,7 +272,6 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-
     return "Beyblade Monitor Running"
 
 threading.Thread(
