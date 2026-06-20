@@ -1,4 +1,5 @@
 import requests
+print("版本20260620-1")
 from bs4 import BeautifulSoup
 import time
 import json
