@@ -11,8 +11,8 @@ print("程式啟動")
 
 # ================= 設定 =================
 
-TOKEN = "8183572724:AAGThEkMATxo_g4zsShkF0oImzRv3UK_WOc"
-CHAT_ID = "8806826310"
+TOKEN = os.environ["TOKEN"]
+CHAT_ID = os.environ["CHAT_ID"]
 
 CHECK_TIME = 60
 SAVE_FILE = "seen.json"
@@ -103,15 +103,20 @@ def get_products():
             print("開始抓網址")
             print(site["url"])
 
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "Accept": "text/html,application/xhtml+xml",
+                "Accept-Language": "zh-TW,zh;q=0.9",
+                "Connection": "close"
+            }
+
             r = requests.get(
                 site["url"],
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-                },
-                timeout=20
+                headers=headers,
+                timeout=(10, 20)
             )
 
-            print("HTTP:", r.status_code)
+            print("HTTP狀態:", r.status_code)
 
             html = r.text
 
@@ -152,7 +157,11 @@ def get_products():
                         href
                     )
 
-                key = site["name"] + "|" + href
+                key = (
+                    site["name"]
+                    + "|"
+                    + href
+                )
 
                 products[key] = {
                     "site": site["name"],
@@ -163,10 +172,7 @@ def get_products():
 
                 count += 1
 
-                print(
-                    "抓到:",
-                    text[:80]
-                )
+                print("抓到:", text[:80])
 
             print(
                 site["name"],
@@ -176,7 +182,8 @@ def get_products():
 
         except Exception as e:
 
-            print("Funbox錯誤:", repr(e))
+            print("REQUEST失敗")
+            print(repr(e))
 
     return products
 
