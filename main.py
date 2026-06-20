@@ -114,8 +114,8 @@ def get_products():
             print("A")
 
             r = requests.get(
-                site["url"],
-                timeout=20
+                "https://www.google.com",
+                timeout=(5,10)
             )
 
             print("B")
