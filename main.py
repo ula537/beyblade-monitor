@@ -111,11 +111,14 @@ def get_products():
                 "Connection": "close"
             }
 
+            print("A")
+
             r = requests.get(
                 site["url"],
-                headers=headers,
-                timeout=(10, 20)
+                timeout=20
             )
+
+            print("B")
 
             print("HTTP狀態:", r.status_code)
 
