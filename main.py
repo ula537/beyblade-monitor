@@ -1,5 +1,4 @@
 import requests
-print("版本20260620-1")
 from bs4 import BeautifulSoup
 import time
 import json
@@ -8,27 +7,23 @@ from urllib.parse import urljoin
 from flask import Flask
 import threading
 
+print("版本20260624-1")
 print("程式啟動")
 
-# ================= 設定 =================
-
-TOKEN = os.environ["TOKEN"]
-CHAT_ID = os.environ["CHAT_ID"]
+TOKEN = os.environ.get("TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
 CHECK_TIME = 60
+
 SAVE_FILE = "seen.json"
 
-SOURCES = [
-    {
-        "name": "Funbox",
-        "url": "https://shop.funbox.com.tw/collections/%E6%88%B0%E9%AC%A5%E9%99%80%E8%9E%BA"
-    }
-]
+URL = "https://shop.funbox.com.tw/collections/%E6%88%B0%E9%AC%A5%E9%99%80%E8%9E%BA"
 
-# ================= Telegram =================
 
 def send_telegram(msg):
+
     try:
+
         requests.post(
             f"https://api.telegram.org/bot{TOKEN}/sendMessage",
             data={
@@ -37,22 +32,26 @@ def send_telegram(msg):
             },
             timeout=10
         )
-    except Exception as e:
-        print("Telegram錯誤:", e)
 
-# ================= seen.json =================
+    except Exception as e:
+
+        print("Telegram錯誤", e)
+
 
 def load_seen():
 
     if os.path.exists(SAVE_FILE):
+
         with open(
             SAVE_FILE,
             "r",
             encoding="utf-8"
         ) as f:
+
             return json.load(f)
 
     return {}
+
 
 def save_seen(data):
 
@@ -69,133 +68,88 @@ def save_seen(data):
             indent=2
         )
 
-# ================= 庫存 =================
-
-def check_stock(text):
-
-    no_stock = [
-        "售罄",
-        "缺貨",
-        "暫時缺貨",
-        "補貨中",
-        "無庫存",
-        "貨到通知"
-    ]
-
-    for word in no_stock:
-        if word in text:
-            return False
-
-    return True
-
-# ================= 抓商品 =================
 
 def get_products():
 
     products = {}
 
-    for site in SOURCES:
+    print("=" * 50)
+    print("掃描 Funbox")
 
-        print("=" * 50)
-        print("掃描:", site["name"])
+    try:
 
-        try:
+        r = requests.get(
+            URL,
+            headers={
+                "User-Agent":
+                "Mozilla/5.0"
+            },
+            timeout=20
+        )
 
-            print("開始抓網址")
-            print(site["url"])
+        print("HTTP:", r.status_code)
 
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "Accept": "text/html,application/xhtml+xml",
-                "Accept-Language": "zh-TW,zh;q=0.9",
-                "Connection": "close"
+        html = r.text
+
+        print("HTML長度:", len(html))
+
+        soup = BeautifulSoup(
+            html,
+            "html.parser"
+        )
+
+        count = 0
+
+        for a in soup.find_all("a"):
+
+            href = a.get("href")
+
+            text = a.get_text(
+                " ",
+                strip=True
+            )
+
+            if not href:
+                continue
+
+            if "/products/" not in href:
+                continue
+
+            if (
+                "戰鬥陀螺" not in text
+                and
+                "BEYBLADE" not in text.upper()
+            ):
+                continue
+
+            if href.startswith("/"):
+
+                href = urljoin(
+                    URL,
+                    href
+                )
+
+            key = href
+
+            products[key] = {
+
+                "name": text,
+                "url": href
+
             }
 
-            print("A")
+            count += 1
 
-            r = requests.get(
-                site["url"],
-                timeout=(5,10)
-            )
+            print("抓到:", text)
 
-            print("B")
+        print("商品數:", count)
 
-            print("HTTP狀態:", r.status_code)
+    except Exception as e:
 
-            html = r.text
-
-            except Exception as e:
-
-                print("C")
-                print(type(e).__name__)
-                print(repr(e))
-
-            soup = BeautifulSoup(
-                html,
-                "html.parser"
-            )
-
-            count = 0
-
-            for a in soup.find_all("a"):
-
-                text = a.get_text(
-                    " ",
-                    strip=True
-                )
-
-                href = a.get("href")
-
-                if not href:
-                    continue
-
-                if "/products/" not in href:
-                    continue
-
-                if (
-                    "BEYBLADE" not in text.upper()
-                    and "戰鬥陀螺" not in text
-                ):
-                    continue
-
-                if href.startswith("/"):
-
-                    href = urljoin(
-                        site["url"],
-                        href
-                    )
-
-                key = (
-                    site["name"]
-                    + "|"
-                    + href
-                )
-
-                products[key] = {
-                    "site": site["name"],
-                    "name": text,
-                    "url": href,
-                    "stock": check_stock(text)
-                }
-
-                count += 1
-
-                print("抓到:", text[:80])
-
-            print(
-                site["name"],
-                "抓到商品:",
-                count
-            )
-
-        except Exception as e:
-
-            print("REQUEST失敗")
-            print(repr(e))
+        print("錯誤:", e)
 
     return products
 
-# ================= 監控 =================
 
 def monitor():
 
@@ -203,69 +157,27 @@ def monitor():
 
     first_run = len(seen) == 0
 
-    print("開始監控戰鬥陀螺")
-
     while True:
 
         products = get_products()
 
-        print(
-            time.strftime("%H:%M:%S"),
-            "商品數:",
-            len(products)
-        )
-
         for key, p in products.items():
-
-            site = p["site"]
-            name = p["name"]
-            url = p["url"]
-            stock = p["stock"]
 
             if key not in seen:
 
                 if not first_run:
 
-                    msg = f"""🆕 新商品
+                    msg = f"""
+🆕 新商品
 
-來源:
-{site}
+{p['name']}
 
-商品:
-{name}
-
-🔗
-{url}
+{p['url']}
 """
 
                     send_telegram(msg)
 
                 seen[key] = p
-
-            else:
-
-                old_stock = seen[key].get(
-                    "stock",
-                    False
-                )
-
-                if old_stock is False and stock is True:
-
-                    msg = f"""🔥 補貨通知
-
-來源:
-{site}
-
-商品:
-{name}
-
-🔗
-{url}
-"""
-
-                    send_telegram(msg)
-
-                seen[key]["stock"] = stock
 
         save_seen(seen)
 
@@ -273,18 +185,21 @@ def monitor():
 
         time.sleep(CHECK_TIME)
 
-# ================= Flask =================
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def home():
+
     return "Beyblade Monitor Running"
+
 
 threading.Thread(
     target=monitor,
     daemon=True
 ).start()
+
 
 app.run(
     host="0.0.0.0",
